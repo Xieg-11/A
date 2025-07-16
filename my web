@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>2D Room Planner + 3D Viewer</title>
+  <style>
+    body { margin: 0; font-family: sans-serif; }
+    #layout2D { width: 40%; height: 100vh; float: left; border-right: 1px solid #ccc; position: relative; }
+    #canvas3D { width: 60%; height: 100vh; float: left; }
+    .furniture { position: absolute; background: rgba(0, 150, 255, 0.6); border: 1px solid #0077cc; cursor: move; }
+  </style>
+</head>
+<body>
+  <div id="layout2D">
+    <div class="furniture" style="width: 80px; height: 40px; top: 50px; left: 60px;">침대</div>
+    <div class="furniture" style="width: 60px; height: 60px; top: 150px; left: 120px;">책상</div>
+    <div class="furniture" style="width: 50px; height: 50px; top: 250px; left: 90px;">서랍장</div>
+  </div>
+  <div id="canvas3D"></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r148/three.min.js"></script>
+  <script>
+    // Enable dragging of 2D furniture items
+    const furnitureItems = document.querySelectorAll('.furniture');
+    furnitureItems.forEach(item => {
+      item.addEventListener('mousedown', startDrag);
+    });
+
+    function startDrag(e) {
+      const item = e.target;
+      const shiftX = e.clientX - item.getBoundingClientRect().left;
+      const shiftY = e.clientY - item.getBoundingClientRect().top;
+
+      function moveAt(pageX, pageY) {
+        item.style.left = pageX - shiftX + 'px';
+        item.style.top = pageY - shiftY + 'px';
+      }
+
+      function onMouseMove(e) {
+        moveAt(e.pageX, e.pageY);
+      }
+
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', () => {
+        document.removeEventListener('mousemove', onMouseMove);
+      }, { once: true });
+    }
+
+    // Basic 3D viewer with placeholder objects
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth * 0.6 / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth * 0.6, window.innerHeight);
+    document.getElementById("canvas3D").appendChild(renderer.domElement);
+
+    const light = new THREE.AmbientLight(0xffffff); // soft white light
+    scene.add(light);
+
+    // Floor
+    const floorGeometry = new THREE.PlaneGeometry(10, 10);
+    const floorMaterial = new THREE.MeshStandardMaterial({ color: 0xdddddd });
+    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+    floor.rotation.x = -Math.PI / 2;
+    scene.add(floor);
+
+    // Add 3 sample cubes as furniture
+    const furnitureMaterials = [0xff4444, 0x44ff44, 0x4444ff];
+    for (let i = 0; i < 3; i++) {
+      const cube = new THREE.Mesh(
+        new THREE.BoxGeometry(1, 0.5, 0.5),
+        new THREE.MeshStandardMaterial({ color: furnitureMaterials[i] })
+      );
+      cube.position.set(i * 1.5 - 2, 0.25, 0);
+      scene.add(cube);
+    }
+
+    camera.position.set(3, 5, 5);
+    camera.lookAt(0, 0, 0);
+
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
